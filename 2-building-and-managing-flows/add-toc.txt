@@ -1,0 +1,50 @@
+function main(workbook: ExcelScript.Workbook) {
+    // Find if "Table of Contents" worksheet already exists
+    let tocSheet: ExcelScript.Worksheet;
+    let worksheets = workbook.getWorksheets();
+
+    for (let sheet of worksheets) {
+        if (sheet.getName() === "Table of Contents") {
+            tocSheet = sheet;
+            break;
+        }
+    }
+
+    // If the "Table of Contents" sheet does not exist, create it
+    if (!tocSheet) {
+        tocSheet = workbook.addWorksheet();
+        tocSheet.setPosition(0);
+        tocSheet.setName("Table of Contents");
+    } else {
+        // Clear the existing content
+        tocSheet.getUsedRange()?.clear();
+    }
+
+    // Give the worksheet a title in the sheet
+    tocSheet.getRange("A1").setValue("Table of Contents");
+    tocSheet.getRange("A1").getFormat().getFont().setBold(true);
+
+    // Create the table of contents headers
+    let tocRange = tocSheet.getRange("A2:B2")
+    tocRange.setValues([["#", "Name"]]);
+
+    // Get the range for the table of contents entries
+    tocRange = tocSheet.getRange(`A3:B${worksheets.length + 2}`);
+
+    // Loop through all worksheets in the workbook, except the "Table of Contents" one
+    let rowIndex = 3;
+    for (let i = 0; i < worksheets.length; i++) {
+        if (worksheets[i].getName() !== "Table of Contents") {
+            // Create a row for each worksheet with its index and linked name
+            tocRange.getCell(rowIndex - 3, 0).setValue(rowIndex - 2);
+            tocRange.getCell(rowIndex - 3, 1).setHyperlink({
+                textToDisplay: worksheets[i].getName(),
+                documentReference: `'${worksheets[i].getName()}'!A1`
+            });
+            rowIndex++;
+        }
+    }
+
+    // Activate the table of contents worksheet
+    tocSheet.activate();
+}
